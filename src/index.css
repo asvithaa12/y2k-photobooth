@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-barbie-primary: #FF69B4;
+  --color-barbie-baby: #FFD6EC;
+  --color-barbie-light: #FFEAF5;
+  --color-barbie-hot: #FF4FA3;
+  --color-barbie-gold: #FFD700;
+
+  --font-barbie: 'Pacifico', cursive, sans-serif;
+  --font-sans: 'Inter', sans-serif;
+
+  --animate-bounce-slow: bounce 2s infinite;
+  --animate-pulse-glow: pulse-glow 2s infinite alternate;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes pulse-glow {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 105, 180, 0.7); }
+    100% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 105, 180, 0); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+  }
+}
+
+body {
+  @apply bg-barbie-light text-slate-800 font-sans overflow-x-hidden;
+  margin: 0;
+  padding: 0;
+  cursor: default;
+}
+
+/* Custom Scrollbar for Barbie Core */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #FFEAF5;
+}
+::-webkit-scrollbar-thumb {
+  background: #FF69B4;
+  border-radius: 5px;
+  border: 2px solid #FFEAF5;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF4FA3;
+}
+
+/* Custom Barbie Glow & Premium styles */
+.barbie-glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 105, 180, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(255, 105, 180, 0.15);
+}
+
+.barbie-border-glow {
+  box-shadow: 0 0 15px rgba(255, 105, 180, 0.6), inset 0 0 10px rgba(255, 105, 180, 0.4);
+}
+
+/* Glossy Button Style */
+.btn-glossy {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FF69B4 0%, #FF4FA3 100%);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 15px rgba(255, 79, 163, 0.4), inset 0 -4px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.35);
+  transition: all 0.2s ease;
+}
+.btn-glossy::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  transition: 0.75s;
+  opacity: 0;
+}
+.btn-glossy:hover::after {
+  left: 125%;
+  opacity: 1;
+}
+.btn-glossy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 79, 163, 0.6), inset 0 -4px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.4);
+}
+.btn-glossy:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(255, 79, 163, 0.4), inset 0 -1px 0 rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* Gold Glossy Button */
+.btn-glossy-gold {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #5d4000;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.5);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4), inset 0 -4px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.5);
+  transition: all 0.2s ease;
+}
+.btn-glossy-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6), inset 0 -4px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.6);
+}
+.btn-glossy-gold:active {
+  transform: translateY(1px);
+}
+
+/* Dollhouse Window Pane styling */
+.dollhouse-window {
+  border: 12px solid #FFD6EC;
+  box-shadow: 0 10px 25px rgba(255, 105, 180, 0.2), inset 0 0 15px rgba(255, 105, 180, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.dollhouse-window::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  background: rgba(255, 214, 236, 0.6);
+  z-index: 10;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.dollhouse-window::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  background: rgba(255, 214, 236, 0.6);
+  z-index: 10;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Sparkle mouse follow particle style */
+.sparkle-particle {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(circle, #FFF 20%, rgba(255,215,0,0.8) 60%, rgba(255,105,180,0) 100%);
+  border-radius: 50%;
+  z-index: 9999;
+  animation: sparkle-fade 0.8s ease-out forwards;
+}
+
+@keyframes sparkle-fade {
+  0% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+/* Shutter flash effect */
+.shutter-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 99999;
+  pointer-events: none;
+}
