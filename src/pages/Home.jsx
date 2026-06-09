@@ -1,226 +1,360 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactConfetti from 'react-confetti';
 import html2canvas from 'html2canvas';
-import { Sparkles, Heart } from 'lucide-react';
 
 // Components
 import LandingScreen from '../components/LandingScreen';
 import CameraBooth from '../components/CameraBooth';
 import StickerCanvas from '../components/StickerCanvas';
 import StickerPanel from '../components/StickerPanel';
-import DownloadSection from '../components/DownloadSection';
-import FloatingHearts from '../components/FloatingHearts';
+import PhotoStrip from '../components/PhotoStrip';
+import FinalScreen from '../components/FinalScreen';
 import SparkleCursor from '../components/SparkleCursor';
-
-// Audio and data
-import { playClickSound } from '../utils/soundSynthesizer';
+import { Sparkles, Camera, RefreshCw, Heart } from 'lucide-react';
 
 export default function Home() {
-  const [appState, setAppState] = useState('LOBBY'); // LOBBY, CAMERA, EDITOR
+  const [appState, setAppState] = useState('LOBBY');
   const [capturedPhotos, setCapturedPhotos] = useState([]);
-  const [stickers, setStickers] = useState([]);
-  const [selectedStickerId, setSelectedStickerId] = useState(null);
+
+  const [items, setItems] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+
+  const [footerText,      setFooterText]      = useState('Y2K MEMORIES');
+  const [borderStyle,     setBorderStyle]     = useState('vintage-film');
+  const [photoFilter,     setPhotoFilter]     = useState('normal');
+  const [filterSettings,  setFilterSettings]  = useState({ brightness:100, contrast:100, warmth:0, saturation:100, grain:0, fade:0 });
+  const [customization,   setCustomization]   = useState({ spacing:12, corners:0, shadow:true, frameThickness:24, bgColor:'#ffffff' });
+
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [savedImageUri, setSavedImageUri] = useState(null);
+
+  const [history, setHistory] = useState([]);
+  const [future,  setFuture]  = useState([]);
 
   const canvasRef = useRef(null);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+  // ── History helpers ─────────────────────────────────────────────────────
+  const pushHistory = (
+    newFooterText        = footerText,
+    currentItems         = items,
+    currentBorderStyle   = borderStyle,
+    currentPhotoFilter   = photoFilter,
+    currentFilterSettings= filterSettings,
+    currentCustomization = customization
+  ) => {
+    const snapshot = {
+      items: JSON.parse(JSON.stringify(currentItems)),
+      footerText: newFooterText,
+      borderStyle: currentBorderStyle,
+      photoFilter: currentPhotoFilter,
+      filterSettings: { ...currentFilterSettings },
+      customization: { ...currentCustomization },
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleStartBooth = () => {
-    setAppState('CAMERA');
+    setHistory(prev => [...prev, snapshot].slice(-30));
+    setFuture([]);
   };
 
+  const handleUndo = () => {
+    if (!history.length) return;
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setFuture(f => [{
+      items: JSON.parse(JSON.stringify(items)), footerText,
+      borderStyle, photoFilter,
+      filterSettings: { ...filterSettings },
+      customization: { ...customization },
+    }, ...f]);
+    setItems(prev.items);
+    setFooterText(prev.footerText);
+    setBorderStyle(prev.borderStyle);
+    setPhotoFilter(prev.photoFilter);
+    setFilterSettings(prev.filterSettings);
+    setCustomization(prev.customization);
+    setSelectedId(null);
+  };
+
+  const handleRedo = () => {
+    if (!future.length) return;
+    const next = future[0];
+    setFuture(f => f.slice(1));
+    setHistory(h => [...h, {
+      items: JSON.parse(JSON.stringify(items)), footerText,
+      borderStyle, photoFilter,
+      filterSettings: { ...filterSettings },
+      customization: { ...customization },
+    }]);
+    setItems(next.items);
+    setFooterText(next.footerText);
+    setBorderStyle(next.borderStyle);
+    setPhotoFilter(next.photoFilter);
+    setFilterSettings(next.filterSettings);
+    setCustomization(next.customization);
+    setSelectedId(null);
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      if (appState !== 'EDITOR') return;
+      const el = document.activeElement;
+      const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+      if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+        if (typing && el.value !== footerText) return;
+        e.preventDefault(); handleUndo();
+      } else if (e.ctrlKey && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+        e.preventDefault(); handleRedo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [appState, history, future, items, footerText, borderStyle, photoFilter, filterSettings, customization]);
+
+  // Autosave
+  useEffect(() => {
+    if (appState === 'EDITOR' && capturedPhotos.length > 0) {
+      localStorage.setItem('y2k_memories_editor_state', JSON.stringify({
+        capturedPhotos, items, footerText, borderStyle, photoFilter, filterSettings, customization,
+      }));
+    }
+  }, [items, footerText, borderStyle, photoFilter, filterSettings, customization, capturedPhotos, appState]);
+
+  // Restore autosave
+  useEffect(() => {
+    const saved = localStorage.getItem('y2k_memories_editor_state');
+    if (saved) {
+      try {
+        const p = JSON.parse(saved);
+        if (p.capturedPhotos?.length > 0) {
+          setCapturedPhotos(p.capturedPhotos);
+          setItems(p.items || []);
+          setFooterText(p.footerText || 'Y2K MEMORIES');
+          setBorderStyle(p.borderStyle || 'vintage-film');
+          setPhotoFilter(p.photoFilter || 'normal');
+          setFilterSettings(p.filterSettings || { brightness:100, contrast:100, warmth:0, saturation:100, grain:0, fade:0 });
+          setCustomization(p.customization || { spacing:12, corners:0, shadow:true, frameThickness:24 });
+          setAppState('EDITOR');
+        }
+      } catch {}
+    }
+  }, []);
+
+  // ── Event handlers ──────────────────────────────────────────────────────
   const handlePhotosComplete = (photosList) => {
     setCapturedPhotos(photosList);
-    setStickers([]);
-    setSelectedStickerId(null);
+    setItems([]); setSelectedId(null);
+    setBorderStyle('vintage-film'); setPhotoFilter('normal');
+    setFilterSettings({ brightness:100, contrast:100, warmth:0, saturation:100, grain:0, fade:0 });
+    setCustomization({ spacing:12, corners:0, shadow:true, frameThickness:24 });
+    setHistory([]); setFuture([]); setSavedImageUri(null);
     setAppState('EDITOR');
-    setShowConfetti(true);
-    // Disable confetti after 5 seconds to free up CPU
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 5500);
   };
 
   const handleAddSticker = (stickerTemplateId) => {
-    const newSticker = {
-      id: `sticker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      stickerId: stickerTemplateId,
-      x: 150, // default center position (container is 300px wide)
-      y: 350, // default vertically balanced position
-      scale: 1.0,
-      rotate: 0,
-      zIndex: stickers.length + 10,
+    pushHistory(footerText);
+    const newItem = {
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2,9)}`,
+      type: 'sticker', stickerId: stickerTemplateId,
+      x: 120, y: 360, scale: 1.0, rotate: 0, flipH: false, flipV: false, opacity: 1.0,
+      zIndex: 50 + items.length,
     };
-    setStickers((prev) => [...prev, newSticker]);
-    setSelectedStickerId(newSticker.id);
+    setItems(prev => [...prev, newItem]);
+    setSelectedId(newItem.id);
   };
 
-  const handleDownload = async () => {
+  const handleAddText = (text, font, color) => {
+    pushHistory(footerText);
+    const newItem = {
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2,9)}`,
+      type: 'text', text, font, color,
+      x: 120, y: 360, scale: 1.0, rotate: 0, flipH: false, flipV: false, opacity: 1.0,
+      zIndex: 50 + items.length,
+    };
+    setItems(prev => [...prev, newItem]);
+    setSelectedId(newItem.id);
+  };
+
+  const handleSaveAndExport = async () => {
     if (!canvasRef.current) return;
-    setIsDownloading(true);
-    setSelectedStickerId(null); // Clear selection border for print
-
-    // Wait a brief moment for the browser to render selection removal
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
+    setIsDownloading(true); setSelectedId(null);
+    await new Promise(r => setTimeout(r, 150));
     try {
-      const canvas = await html2canvas(canvasRef.current, {
-        useCORS: true,
-        scale: 3, // Render 3x resolution for beautiful download print quality
-        backgroundColor: null, // keep transparent backing
-        logging: false,
-      });
-
-      const url = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `barbie-dreambooth-${Date.now()}.png`;
-      link.click();
-      
-      // Trigger a short burst of confetti again on success download!
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-    } catch (err) {
-      console.error('Failed to generate png download:', err);
-    } finally {
-      setIsDownloading(false);
-    }
+      const canvas = await html2canvas(canvasRef.current, { useCORS:true, scale:3, backgroundColor:null, logging:false });
+      setSavedImageUri(canvas.toDataURL('image/png'));
+      setAppState('FINAL');
+    } catch (err) { console.error(err); }
+    finally { setIsDownloading(false); }
   };
 
-  const handleRetake = () => {
-    setStickers([]);
-    setSelectedStickerId(null);
-    setAppState('CAMERA');
-  };
+  const handleRetake    = () => { setItems([]); setSelectedId(null); setHistory([]); setFuture([]); setSavedImageUri(null); setAppState('CAMERA'); };
+  const handleStartOver = () => { setCapturedPhotos([]); setItems([]); setSelectedId(null); setSavedImageUri(null); setHistory([]); setFuture([]); localStorage.removeItem('y2k_memories_editor_state'); setAppState('LOBBY'); };
 
-  const handleStartOver = () => {
-    setCapturedPhotos([]);
-    setStickers([]);
-    setSelectedStickerId(null);
-    setAppState('LOBBY');
-  };
+  // ── Screens ─────────────────────────────────────────────────────────────
+  if (appState === 'LOBBY')  return <div className="w-full h-screen overflow-hidden"><SparkleCursor /><LandingScreen onStart={() => setAppState('CAMERA')} /></div>;
+  if (appState === 'CAMERA') return <div className="w-full h-screen overflow-hidden"><SparkleCursor /><CameraBooth onPhotoCapture={handlePhotosComplete} onBack={handleStartOver} /></div>;
+  if (appState === 'FINAL')  return <FinalScreen savedImageUri={savedImageUri} onEditAgain={() => setAppState('EDITOR')} onStartNew={handleStartOver} footerText={footerText} />;
 
+  // ── EDITOR ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen w-full relative overflow-x-hidden flex flex-col bg-gradient-to-tr from-[#FFEAF5] via-[#FFD6EC] to-[#FFEAF5] font-sans pb-12 select-none">
-      {/* Decorative Dreamhouse Cloud Layer */}
-      <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#FFF]/20 to-transparent pointer-events-none" />
-
-      {/* Ambient background particles and trails */}
-      <FloatingHearts />
+    <div
+      className="w-full h-screen overflow-hidden flex flex-col bg-cover bg-center font-serif select-none"
+      style={{ backgroundImage: `url('/bg-scrapbook.png')` }}
+    >
+      {/* overlay tint */}
+      <div className="absolute inset-0 bg-[#f5ebe8]/20 mix-blend-multiply pointer-events-none z-0" />
       <SparkleCursor />
 
-      {/* Confetti Trigger */}
-      {showConfetti && (
-        <ReactConfetti
-          width={windowSize.width}
-          height={windowSize.height}
-          recycle={false}
-          numberOfPieces={200}
-          colors={['#FF69B4', '#FFD6EC', '#FF4FA3', '#FFD700', '#FFFFFF']}
-        />
-      )}
+      {/* ambient floaters */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {['💖','✨','🎀','📸','🌸','💫'].map((emoji, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-2xl opacity-30 select-none"
+            style={{ left:`${10+(i*15)%80}%`, top:`${5+(i*23)%80}%` }}
+            animate={{ y:[0,-18,0], rotate:[0,8,-8,0], opacity:[0.2,0.45,0.2] }}
+            transition={{ duration:5+(i%3), repeat:Infinity, ease:'easeInOut', delay:i*0.6 }}
+          >{emoji}</motion.div>
+        ))}
+      </div>
 
-      {/* App Main Header Logo */}
-      <header className="w-full py-6 flex items-center justify-center gap-2 z-20 select-none">
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <motion.header
+        initial={{ opacity:0, y:-18 }}
+        animate={{ opacity:1, y:0 }}
+        transition={{ duration:0.45 }}
+        className="w-full py-2.5 flex flex-row items-center justify-between px-8 z-20 shrink-0"
+        style={{ borderBottom:'1px solid rgba(255,192,203,0.2)' }}
+      >
+        <div className="flex items-center gap-2">
+          <motion.h1
+            whileHover={{ scale:1.02, rotate:-1 }}
+            className="font-serif italic text-2xl text-[#333] tracking-widest cursor-default"
+          >Photostrip Scrapbook</motion.h1>
+          <motion.span
+            animate={{ rotate:[0,15,-15,0], scale:[1,1.15,1] }}
+            transition={{ duration:2.5, repeat:Infinity, ease:'easeInOut' }}
+          >
+            <Sparkles size={18} className="text-yellow-500 fill-yellow-400" />
+          </motion.span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-stone-400 font-mono">
+          <Heart size={11} className="text-rose-400 fill-rose-400 animate-pulse" />
+          <span className="hidden md:inline">edit, decorate &amp; save your memories</span>
+          <Heart size={11} className="text-rose-400 fill-rose-400 animate-pulse" />
+        </div>
+      </motion.header>
+
+      {/* ── Main 3-col layout (fills remaining height, no scroll) ────────── */}
+      <main className="flex-1 min-h-0 w-full max-w-[1440px] mx-auto px-4 z-10 flex flex-row gap-4 items-start pt-3 pb-3 relative overflow-hidden">
+
+        {/* LEFT COLUMN — mini preview + booth controls */}
+        <div className="flex flex-col gap-3 w-[220px] shrink-0 h-full">
+          {/* Mini preview */}
+          <motion.div
+            initial={{ opacity:0, y:10 }}
+            animate={{ opacity:1, y:0 }}
+            transition={{ duration:0.45, delay:0.05 }}
+            className="flex justify-center"
+            style={{ transform:'scale(0.72)', transformOrigin:'top center' }}
+          >
+            <motion.div
+              animate={{ rotate:[-2.5,-1,-3,-2.5] }}
+              transition={{ duration:6, repeat:Infinity, ease:'easeInOut' }}
+              className="pointer-events-none"
+            >
+              <PhotoStrip
+                photos={capturedPhotos}
+                footerText={footerText}
+                borderStyle={borderStyle}
+                photoFilter={photoFilter}
+                filterSettings={filterSettings}
+                customization={customization}
+              />
+            </motion.div>
+          </motion.div>
+
+          {/* Booth controls */}
+          <motion.div
+            initial={{ opacity:0, y:10 }}
+            animate={{ opacity:1, y:0 }}
+            transition={{ duration:0.45, delay:0.12 }}
+            className="w-full flex flex-col gap-2 p-4 rounded-3xl"
+            style={{
+              background:'linear-gradient(145deg,rgba(255,255,255,0.92),rgba(255,240,245,0.88))',
+              backdropFilter:'blur(12px)',
+              border:'1.5px solid rgba(255,192,203,0.35)',
+              boxShadow:'0 6px 24px rgba(255,105,180,0.09)',
+            }}
+          >
+            <label className="text-stone-500 font-mono text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
+              <Camera size={11} className="text-rose-400" /> Booth Controls
+            </label>
+            <motion.button
+              whileHover={{ scale:1.02, y:-1 }}
+              whileTap={{ scale:0.97, y:1 }}
+              onClick={handleSaveAndExport}
+              disabled={isDownloading}
+              className="bg-gradient-to-br from-[#222] to-black text-white font-mono font-bold px-4 py-2.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+            >
+              <Sparkles size={13} className={isDownloading ? 'animate-spin' : ''} />
+              {isDownloading ? 'SAVING…' : 'SAVE STRIP'}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale:1.02, y:-1 }}
+              whileTap={{ scale:0.97, y:1 }}
+              onClick={handleRetake}
+              className="w-full text-[#333] font-mono font-bold py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 text-xs"
+              style={{
+                background:'rgba(255,245,248,0.7)',
+                border:'1.5px dashed rgba(255,192,203,0.5)',
+              }}
+            >
+              <RefreshCw size={11} /> RETAKE
+            </motion.button>
+          </motion.div>
+        </div>
+
+        {/* CENTER COLUMN — interactive canvas */}
         <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 3 }}
-          className="text-barbie-hot drop-shadow-md text-2xl"
+          initial={{ opacity:0, y:12 }}
+          animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.5, delay:0.08 }}
+          className="flex-1 min-w-0 h-full flex items-start justify-center pt-2"
         >
-          💖
+          <StickerCanvas
+            photos={capturedPhotos}
+            items={items}
+            setItems={setItems}
+            selectedId={selectedId}
+            setSelectedId={setSelectedId}
+            canvasRef={canvasRef}
+            footerText={footerText}
+            borderStyle={borderStyle}
+            photoFilter={photoFilter}
+            filterSettings={filterSettings}
+            customization={customization}
+          />
         </motion.div>
-        <h1 className="font-barbie text-4xl text-barbie-hot drop-shadow-sm tracking-wide">
-          Malibu Dreamhouse
-        </h1>
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 3, delay: 1.5 }}
-          className="text-barbie-gold drop-shadow-md text-2xl"
-        >
-          ✨
-        </motion.div>
-      </header>
 
-      {/* Screen Routing */}
-      <main className="flex-grow flex items-center justify-center w-full max-w-7xl mx-auto px-4 z-10">
-        <AnimatePresence mode="wait">
-          {appState === 'LOBBY' && (
-            <motion.div
-              key="lobby"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-              className="w-full"
-            >
-              <LandingScreen onStart={handleStartBooth} />
-            </motion.div>
-          )}
+        {/* RIGHT COLUMN — unified studio panel */}
+        <div className="w-[340px] shrink-0 h-full flex flex-col">
+          <StickerPanel
+            onAddSticker={handleAddSticker}
+            onAddText={handleAddText}
+            /* film label */
+            footerText={footerText}
+            setFooterText={setFooterText}
+            pushFooterHistory={(val) => pushHistory(val, items, borderStyle, photoFilter, filterSettings, customization)}
+            /* customization */
+            borderStyle={borderStyle}       setBorderStyle={setBorderStyle}
+            photoFilter={photoFilter}       setPhotoFilter={setPhotoFilter}
+            filterSettings={filterSettings} setFilterSettings={setFilterSettings}
+            customization={customization}   setCustomization={setCustomization}
+            pushHistory={() => pushHistory(footerText, items, borderStyle, photoFilter, filterSettings, customization)}
+            onUndo={handleUndo}  onRedo={handleRedo}
+            canUndo={history.length > 0}    canRedo={future.length > 0}
+          />
+        </div>
 
-          {appState === 'CAMERA' && (
-            <motion.div
-              key="camera"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full"
-            >
-              <CameraBooth onPhotosComplete={handlePhotosComplete} onBack={handleStartOver} />
-            </motion.div>
-          )}
-
-          {appState === 'EDITOR' && (
-            <motion.div
-              key="editor"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              className="w-full max-w-5xl flex flex-col lg:flex-row items-center lg:items-start justify-center gap-10 py-6"
-            >
-              {/* Left Column: Photostrip Canvas and Download Controls */}
-              <div className="flex flex-col items-center">
-                <div className="p-4 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/60 shadow-xl">
-                  <StickerCanvas
-                    photos={capturedPhotos}
-                    stickers={stickers}
-                    setStickers={setStickers}
-                    selectedId={selectedStickerId}
-                    setSelectedId={setSelectedStickerId}
-                    canvasRef={canvasRef}
-                  />
-                </div>
-                
-                <DownloadSection
-                  onDownload={handleDownload}
-                  onRetake={handleRetake}
-                  onStartOver={handleStartOver}
-                  isDownloading={isDownloading}
-                />
-              </div>
-
-              {/* Right Column: Sticker Panel Shelf */}
-              <div className="w-full max-w-md lg:mt-4">
-                <div className="flex items-center gap-2 mb-3 text-barbie-hot justify-center lg:justify-start">
-                  <Sparkles size={18} className="animate-pulse" />
-                  <span className="font-extrabold uppercase text-sm tracking-wider font-sans">
-                    Sticker Wardrobe
-                  </span>
-                  <Sparkles size={18} className="animate-pulse" />
-                </div>
-                <StickerPanel onAddSticker={handleAddSticker} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </main>
     </div>
   );

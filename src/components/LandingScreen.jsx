@@ -1,78 +1,43 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Camera, Sparkles, Heart } from 'lucide-react';
-import { playClickSound } from '../utils/soundSynthesizer';
+import { Camera } from 'lucide-react';
 
-export default function LandingScreen({ onStart }) {
-  const handleStart = () => {
-    playClickSound();
-    onStart();
-  };
-
+const LandingScreen = ({ onStart }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-center select-none relative z-10">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="max-w-2xl w-full p-8 md:p-12 rounded-[2.5rem] barbie-glass border-4 border-barbie-baby relative shadow-2xl overflow-hidden"
-      >
-        {/* Decorative Dollhouse Arch Frame */}
-        <div className="absolute inset-2 border-2 border-dashed border-barbie-primary rounded-[2rem] pointer-events-none opacity-50" />
+    <div 
+      className="w-full h-screen bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center py-12 px-4 relative select-none font-serif"
+      style={{ backgroundImage: `url('/bg-scrapbook.png')` }}
+    >
+      <div className="absolute inset-0 bg-[#f5ebe8]/10 mix-blend-multiply pointer-events-none" />
 
-        {/* Small floating sparkles/hearts in card */}
-        <div className="absolute top-4 left-6 text-barbie-primary opacity-60 animate-bounce-slow">
-          <Heart size={28} fill="#FF69B4" />
+      {/* Scattered Scrapbook Elements (Simulated with absolute positioning) */}
+      <div className="absolute top-10 left-10 text-6xl drop-shadow-md rotate-[-15deg] opacity-90 animate-float">💋</div>
+      <div className="absolute top-20 right-20 text-6xl drop-shadow-md rotate-[10deg] opacity-90 animate-float" style={{ animationDelay: '1s' }}>🪩</div>
+      <div className="absolute bottom-20 left-20 text-6xl drop-shadow-md rotate-[-5deg] opacity-90 animate-float" style={{ animationDelay: '2s' }}>💌</div>
+      <div className="absolute bottom-10 right-10 text-6xl drop-shadow-md rotate-[20deg] opacity-90 animate-float" style={{ animationDelay: '0.5s' }}>🌷</div>
+
+      {/* Main Title Area simulating torn paper effect */}
+      <div className="relative z-10 flex flex-col items-center max-w-4xl w-full">
+        
+        <div className="bg-[#f0f0f0] p-8 md:p-12 shadow-[10px_10px_0_rgba(0,0,0,0.2)] border-[2px] border-black rotate-[-2deg] flex flex-col items-center">
+          <h1 className="font-serif italic text-6xl md:text-[6rem] text-[#333] drop-shadow-sm tracking-tighter leading-none mb-2 text-center">
+            Y2K Memories
+          </h1>
+          <p className="font-mono text-[#555] tracking-widest uppercase text-sm md:text-lg mb-8 text-center border-b border-black/20 pb-2">
+            digital camera photobooth
+          </p>
+
+          <button 
+            onClick={onStart}
+            className="group bg-[#222] text-white px-10 py-5 font-mono font-bold text-xl md:text-2xl tracking-widest shadow-[6px_6px_0_rgba(0,0,0,0.15)] hover:bg-[#000] hover:shadow-[4px_4px_0_rgba(0,0,0,0.15)] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[6px] active:translate-y-[6px] transition-all flex items-center justify-center gap-4"
+          >
+            <Camera size={28} className="group-hover:scale-110 transition-transform" />
+            START CAPTURE
+          </button>
         </div>
-        <div className="absolute bottom-6 right-8 text-barbie-gold opacity-80 animate-spin" style={{ animationDuration: '6s' }}>
-          <Sparkles size={32} />
-        </div>
-
-        {/* Cursive Logo Header */}
-        <motion.h1
-          initial={{ y: -30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-6xl md:text-8xl font-barbie text-barbie-hot drop-shadow-lg tracking-wider mb-2 select-none"
-        >
-          Dream Booth
-        </motion.h1>
-
-        {/* Subtitle */}
-        <motion.p
-          initial={{ y: 15, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="text-lg md:text-2xl font-semibold text-slate-700 max-w-lg mx-auto leading-relaxed font-sans mb-8"
-        >
-          Welcome to Barbie's Dreamhouse! Step inside, pose, and decorate your memories with cute stickers.
-        </motion.p>
-
-        {/* Main CTA Button */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleStart}
-          className="btn-glossy px-8 py-4 rounded-full text-lg md:text-xl font-bold flex items-center gap-3 mx-auto transition-transform"
-        >
-          <Camera size={24} className="stroke-[2.5]" />
-          <span>START PHOTOBOOTH</span>
-          <Sparkles size={20} className="animate-pulse" />
-        </motion.button>
-
-        {/* Additional Decorative Badges */}
-        <div className="mt-8 flex justify-center gap-4 flex-wrap text-sm font-semibold text-barbie-hot">
-          <span className="bg-barbie-light border border-barbie-baby px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
-            💝 3 Snapshots
-          </span>
-          <span className="bg-barbie-light border border-barbie-baby px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
-            🎀 Cute Stickers
-          </span>
-          <span className="bg-barbie-light border border-barbie-baby px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
-            ✨ Pure Magic
-          </span>
-        </div>
-      </motion.div>
+        
+      </div>
     </div>
   );
-}
+};
+
+export default LandingScreen;

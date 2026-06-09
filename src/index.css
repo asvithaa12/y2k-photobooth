@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Caveat:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Pinyon+Script&family=Special+Elite&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&display=swap');
+
 
 @import "tailwindcss";
 
@@ -188,3 +189,22 @@ body {
   z-index: 99999;
   pointer-events: none;
 }
+
+/* Hide scrollbar visually but keep scroll functionality */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin custom scrollbar for studio panel */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,192,203,0.5) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,192,203,0.55); border-radius: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,150,180,0.75); }
