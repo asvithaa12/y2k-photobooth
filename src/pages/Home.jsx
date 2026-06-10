@@ -313,47 +313,86 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* CENTER COLUMN — interactive canvas */}
+        {/* SCRAPBOOK BOOK — two-page layout: left = photostrip, right = toolkit */}
         <motion.div
           initial={{ opacity:0, y:12 }}
           animate={{ opacity:1, y:0 }}
-          transition={{ duration:0.5, delay:0.08 }}
-          className="flex-1 min-w-0 h-full flex items-start justify-center pt-2"
+          transition={{ duration:0.6, delay:0.08 }}
+          className="flex-1 min-w-0 h-full flex items-center justify-center pt-6"
         >
-          <StickerCanvas
-            photos={capturedPhotos}
-            items={items}
-            setItems={setItems}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
-            canvasRef={canvasRef}
-            footerText={footerText}
-            borderStyle={borderStyle}
-            photoFilter={photoFilter}
-            filterSettings={filterSettings}
-            customization={customization}
-          />
-        </motion.div>
+          <div className="relative w-full max-w-4xl flex items-stretch justify-center">
+            {/* Book spine and subtle page shadow */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-6 pointer-events-none z-0">
+              <div className="w-full h-full bg-gradient-to-b from-[#e6d6c8] via-[#f6efe8] to-[#e9d7cf] rounded-l-2xl shadow-inner opacity-80" />
+            </div>
 
-        {/* RIGHT COLUMN — unified studio panel */}
-        <div className="w-[340px] shrink-0 h-full flex flex-col">
-          <StickerPanel
-            onAddSticker={handleAddSticker}
-            onAddText={handleAddText}
-            /* film label */
-            footerText={footerText}
-            setFooterText={setFooterText}
-            pushFooterHistory={(val) => pushHistory(val, items, borderStyle, photoFilter, filterSettings, customization)}
-            /* customization */
-            borderStyle={borderStyle}       setBorderStyle={setBorderStyle}
-            photoFilter={photoFilter}       setPhotoFilter={setPhotoFilter}
-            filterSettings={filterSettings} setFilterSettings={setFilterSettings}
-            customization={customization}   setCustomization={setCustomization}
-            pushHistory={() => pushHistory(footerText, items, borderStyle, photoFilter, filterSettings, customization)}
-            onUndo={handleUndo}  onRedo={handleRedo}
-            canUndo={history.length > 0}    canRedo={future.length > 0}
-          />
-        </div>
+            <motion.div
+              initial={{ rotateY: -12, scale: 0.98, opacity: 0 }}
+              animate={{ rotateY: 0, scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 120, damping: 18, delay: 0.05 }}
+              className="book-pages flex gap-6 z-10"
+            >
+              {/* LEFT PAGE — Memory page with photostrip (stays editable) */}
+              <div className="page-left bg-[#fbf6ef] rounded-2xl shadow-2xl p-6 w-[420px] h-[820px] relative overflow-hidden border border-[#e0cfc2]">
+                {/* subtle paper texture and corner fold */}
+                <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,250,245,0.6))" }} />
+                <div className="absolute top-4 left-4 text-[11px] text-stone-500 font-mono">collect beautiful moments</div>
+
+                {/* photostrip area — keep StickerCanvas here so stickers remain attached to the strip */}
+                <div className="flex items-center justify-center h-full">
+                  <div className="paper-frame relative p-4 bg-transparent pointer-events-auto">
+                    <StickerCanvas
+                      photos={capturedPhotos}
+                      items={items}
+                      setItems={setItems}
+                      selectedId={selectedId}
+                      setSelectedId={setSelectedId}
+                      canvasRef={canvasRef}
+                      footerText={footerText}
+                      borderStyle={borderStyle}
+                      photoFilter={photoFilter}
+                      filterSettings={filterSettings}
+                      customization={customization}
+                    />
+                  </div>
+                </div>
+
+                {/* Decorations on left page (paper clips, washi, flowers) */}
+                <div className="absolute -top-4 left-6 w-10 h-10 pointer-events-none opacity-90">
+                  <svg viewBox="0 0 24 24" className="w-full h-full"><path d="M6 2l10 4v12l-10 4V2z" fill="#f7e9e6" stroke="#d6bfb6"/></svg>
+                </div>
+                <div className="absolute bottom-6 left-6 text-[11px] text-stone-400 font-mono">{new Date().toLocaleDateString()}</div>
+              </div>
+
+              {/* RIGHT PAGE — Toolkit, replaces floating sidebar visually */}
+              <div className="page-right bg-[#f6efe8] rounded-2xl shadow-xl p-5 w-[420px] h-[820px] relative overflow-hidden border border-[#e6d0c3]">
+                {/* Paper tabs / notebook divider visuals */}
+                <div className="absolute right-0 top-20 w-10 h-28 bg-gradient-to-b from-[#fef3f6] to-[#fee4ef] rounded-l-lg pointer-events-none" />
+                <div className="absolute right-0 top-80 w-10 h-20 bg-gradient-to-b from-[#fff7ed] to-[#fef3e6] rounded-l-lg pointer-events-none" />
+
+                <div className="h-full overflow-auto pr-2">
+                  <div className="mb-3 text-sm font-serif italic text-stone-600">Edit & decorate</div>
+                  <StickerPanel
+                    onAddSticker={handleAddSticker}
+                    onAddText={handleAddText}
+                    /* film label */
+                    footerText={footerText}
+                    setFooterText={setFooterText}
+                    pushFooterHistory={(val) => pushHistory(val, items, borderStyle, photoFilter, filterSettings, customization)}
+                    /* customization */
+                    borderStyle={borderStyle}       setBorderStyle={setBorderStyle}
+                    photoFilter={photoFilter}       setPhotoFilter={setPhotoFilter}
+                    filterSettings={filterSettings} setFilterSettings={setFilterSettings}
+                    customization={customization}   setCustomization={setCustomization}
+                    pushHistory={() => pushHistory(footerText, items, borderStyle, photoFilter, filterSettings, customization)}
+                    onUndo={handleUndo}  onRedo={handleRedo}
+                    canUndo={history.length > 0}    canRedo={future.length > 0}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
 
       </main>
     </div>
